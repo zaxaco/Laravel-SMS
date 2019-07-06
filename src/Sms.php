@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 class SMS extends Controller
 {
     protected static $gateway;
+    protected static $gateway2;
 
 
     public static function run($gatewayName = false)
