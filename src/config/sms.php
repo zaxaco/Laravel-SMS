@@ -10,7 +10,7 @@ return [
 	| You can override the default gateway at request
     |
     */
-    'default' => 'smsgw.net',
+    'default' => 'farazsmsPattern',
     /*
     |--------------------------------------------------------------------------
     | SMS Gateway Setup
@@ -70,6 +70,23 @@ return [
             'links' => [
                 'getCredit' => 'http://api.smsgw.net/GetCredit',
                 'sendBulk' => 'http://api.smsgw.net/SendBulkSMS'
+            ],
+        ],
+        'farazsmsPattern' => [
+            'method' => 'get',
+            'senderParameter' => 'from',
+            'userParameter' => 'username',
+            'passwordParameter' => 'password',
+            'recipientsParameter' => 'to',
+            'parameters' => [
+                'username' => '', // username
+                'password' => '', // Password
+                'from' => '',  // service number
+            ],
+            'links' => [
+                'sendPattern' => 'http://37.130.202.188/patterns/pattern',
+                'getCredit' => '',
+                'sendBulk' => ''
             ],
         ],
     ],
