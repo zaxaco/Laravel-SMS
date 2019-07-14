@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 class SMS extends Controller
 {
     protected static $gateway;
-    protected static $gateway2;
-
 
     public static function run($gatewayName = false)
     {
@@ -19,13 +17,18 @@ class SMS extends Controller
     public static function SendRequest($type, $url, $parameters)
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        if ($type == 'post')
+        if ($type == 'post') {
             curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($parameters));
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($parameters));
+        } elseif ($type == 'get') {
+            curl_setopt($ch, CURLOPT_URL, $url.'?'.http_build_query($parameters));
+        } else {
+            dd('method not acceptable!');
+        }
         $result = curl_exec($ch);
         return $result;
     }
@@ -39,12 +42,26 @@ class SMS extends Controller
         $request = static::SendRequest($gateway['method'], $gateway['links']['getCredit'], $parameters);
         return $request;
     }
+    public static function SendPattern($numbers, $pattern_code, $input_data, $from = false, $gatewayName = false)
+    {
+        static::run($gatewayName);
+        $gateway = static::$gateway;
+        $numbers = self::format_numbers($numbers);
+        $parameters[$gateway['userParameter']] = $gateway['parameters'][$gateway['userParameter']];
+        $parameters[$gateway['passwordParameter']] = $gateway['parameters'][$gateway['passwordParameter']];
+        $parameters[$gateway['senderParameter']] = $gateway['parameters'][$gateway['senderParameter']];
+        $parameters[$gateway['recipientsParameter']] = json_encode($numbers);
+        $parameters['input_data'] = json_encode($input_data);
+        $parameters['pattern_code'] = $pattern_code;
+
+        $response = static::SendRequest($gateway['method'], $gateway['links']['sendPattern'], $parameters);
+        return $response;
+    }
 
     public static function Send($numbers, $message, $dateTime = false, $senderName = false, $gatewayName = false)
     {
         static::run($gatewayName);
         $gateway = static::$gateway;
-        $numbers = self::format_numbers($numbers, $gateway['numbersSeparator']);
         $parameters = $gateway['parameters'];
         $parameters[$gateway['recipientsParameter']] = $numbers;
         $parameters[$gateway['messageParameter']] = $message;
@@ -62,19 +79,27 @@ class SMS extends Controller
         $request = static::SendRequest($gateway['method'], $gateway['links']['sendBulk'], $parameters);
         return $request;
     }
-
-    public static function format_numbers($numbers, $separator)
+    /* format numbers:(array or string) and return numbers:(array or string)
+    ** edited
+    */
+    public static function format_numbers($numbers, $separator = false)
     {
         if (!is_array($numbers))
-            return self::format_number($numbers);
+            return array(self::format_number($numbers));
         $numbers_array = array();
         foreach ($numbers as $number) {
-            $n = self::format_numbers($number);
+            $n = self::format_number($number);
             array_push($numbers_array, $n);
         }
-        return implode($separator, $numbers_array);
+        if( $separator ) {
+            return implode($separator, $numbers_array);
+        } else {
+            return $numbers_array;
+        }
     }
-
+    /* format a number:string and return number:string
+    ** not edited
+    */
     public static function format_number($number)
     {
         if (strlen($number) == 10 && starts_with($number, '05'))
