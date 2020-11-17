@@ -76,6 +76,28 @@ class SMS extends Controller
                 $parameters[$gateway['timeParameter']] = $dateTimeObject->format($gateway['timeFormat']);
             }
         }
+        $request = static::SendRequest($gateway['method'], $gateway['links']['send'], $parameters);
+        return $request;
+    }
+    
+    public static function SendBulk($numbers, $message, $dateTime = false, $senderName = false, $gatewayName = false)
+    {
+        static::run($gatewayName);
+        $gateway = static::$gateway;
+        $parameters = $gateway['parameters'];
+        $parameters[$gateway['recipientsParameter']] = $numbers;
+        $parameters[$gateway['messageParameter']] = $message;
+        if ($senderName)
+            $parameters[$gateway['senderParameter']] = $senderName;
+        if ($dateTime) {
+            $dateTimeObject = \DateTime::createFromFormat('Y-m-d H:i:s', $dateTime);
+            if (isset($gateway['dateTimeParameter'])) {
+                $parameters[$gateway['dateTimeParameter']] = $dateTimeObject->format($gateway['dateTimeFormat']);
+            } else {
+                $parameters[$gateway['dateParameter']] = $dateTimeObject->format($gateway['dateFormat']);
+                $parameters[$gateway['timeParameter']] = $dateTimeObject->format($gateway['timeFormat']);
+            }
+        }
         $request = static::SendRequest($gateway['method'], $gateway['links']['sendBulk'], $parameters);
         return $request;
     }
